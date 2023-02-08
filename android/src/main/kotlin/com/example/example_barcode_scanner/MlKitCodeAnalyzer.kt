@@ -14,12 +14,14 @@ import kotlinx.coroutines.launch
 
 typealias SuccessListener = (String) -> Unit
 
-
+/**
+ * класс анализатора изображения для распознования EAN-13 и EAN-8 штрихкодов
+ */
 class MlKitCodeAnalyzer(
     private val barcodeListener: SuccessListener,
 ) : ImageAnalysis.Analyzer {
     private val scanner = BarcodeScanning.getClient(
-          defaultOptions()
+        defaultOptions()
     )
 
 

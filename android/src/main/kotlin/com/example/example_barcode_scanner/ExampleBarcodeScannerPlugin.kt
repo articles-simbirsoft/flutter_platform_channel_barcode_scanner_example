@@ -15,19 +15,13 @@ import io.flutter.plugin.common.MethodChannel.MethodCallHandler
 import io.flutter.plugin.common.MethodChannel.Result
 import io.flutter.view.TextureRegistry
 
-private const val START_SCAN = "startScan"
-private const val GET_DEVICE_TYPE = "getDeviceType"
-private const val STOP_SCAN = "stopScan"
 
-/** ExampleBarcodeScannerPlugin */
+/** Класс плагина сканера
+ * реализует [Pigeon.ScanHostApi] для получения событий по PlatformChannel
+ * @property [flutterApi] - экземпляр [Pigeon.ScanFlutterApi] для вызова api Flutter приложения
+ * */
 class ExampleBarcodeScannerPlugin : FlutterPlugin, ActivityAware, Pigeon.ScanHostApi {
-    /// The MethodChannel that will the communication between Flutter and native Android
-    ///
-    /// This local reference serves to register the plugin with the Flutter Engine and unregister it
-    /// when the Flutter Engine is detached from the Activity
     private var activity: Activity? = null
-
-    // Hardware scan
     private var scanner: Scanner? = null
     private var textureRegistry: TextureRegistry? = null
     private var flutterApi: Pigeon.ScanFlutterApi? = null
@@ -35,6 +29,8 @@ class ExampleBarcodeScannerPlugin : FlutterPlugin, ActivityAware, Pigeon.ScanHos
 
     override fun onAttachedToEngine(@NonNull flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
         textureRegistry = flutterPluginBinding.textureRegistry
+        // важно вызвать чтобы зарегистрировать экземпляр
+        // плагина для получения сообщений по PlatformChannel 
         Pigeon.ScanHostApi.setup(flutterPluginBinding.binaryMessenger, this)
         flutterApi = Pigeon.ScanFlutterApi(flutterPluginBinding.binaryMessenger)
     }
@@ -47,14 +43,15 @@ class ExampleBarcodeScannerPlugin : FlutterPlugin, ActivityAware, Pigeon.ScanHos
     override fun onAttachedToActivity(activityBinding: ActivityPluginBinding) {
         activity = activityBinding.activity
         val deviceInfo = "${Build.MANUFACTURER} ${Build.MODEL} ${Build.DEVICE}"
-        android.util.Log.i("SCANNED", deviceInfo)
+        android.util.Log.i("ExampleBarcodeScanner", deviceInfo)
         scanner = when {
+            // TODO здесь можно добавить создание объекта реализации [Scanner] под конкретный ТСД
             else -> CameraScanner(textureRegistry!!)
         }
         try {
             scanner?.onActivityAttach(activity!!)
         } catch (e: Throwable) {
-            android.util.Log.e("SCANNED", deviceInfo, e)
+            android.util.Log.e("ExampleBarcodeScanner", deviceInfo, e)
         }
     }
 
@@ -67,8 +64,6 @@ class ExampleBarcodeScannerPlugin : FlutterPlugin, ActivityAware, Pigeon.ScanHos
     }
 
     override fun onDetachedFromActivity() {
-        Log.i("ExampleBarcodeScannerPlugin", "onDetachedFromActivity")
-
         scanner?.onActivityDetach(activity!!)
         scanner = null
         activity = null
@@ -76,15 +71,15 @@ class ExampleBarcodeScannerPlugin : FlutterPlugin, ActivityAware, Pigeon.ScanHos
 
     override fun startScan(result: Pigeon.Result<Pigeon.StartScanResult>?) {
         val scanner = this.scanner
-        if(scanner == null){
+        if (scanner == null) {
             result?.error(Exception("Scanner not running"))
             return
         }
-
+        
         scanner.startScan(
             onData = { data ->
                 ContextCompat.getMainExecutor(activity).execute {
-                    android.util.Log.i("SCANNED", data)
+                    android.util.Log.i("ExampleBarcodeScanner","data: $data")
                     flutterApi?.onScan(data) {}
                 }
             },
@@ -95,7 +90,7 @@ class ExampleBarcodeScannerPlugin : FlutterPlugin, ActivityAware, Pigeon.ScanHos
     }
 
     override fun stopScan(result: Pigeon.Result<Void>?) {
-        scanner?.stopScan(activity)
+        scanner?.stopScan()
         result?.success(null)
     }
 

@@ -38,6 +38,8 @@ abstract class ExampleBarcodeScannerService extends ScanFlutterApi {
 
 class ExampleBarcodeScannerServiceImpl implements ExampleBarcodeScannerService {
   ExampleBarcodeScannerServiceImpl() {
+    // важно вызвать чтобы зарегистрировать экземпляр
+    // плагина для получения сообщений по PlatformChannel
     ScanFlutterApi.setup(this);
   }
 
@@ -46,6 +48,7 @@ class ExampleBarcodeScannerServiceImpl implements ExampleBarcodeScannerService {
   final StreamController<String> _scanResultStreamController =
       StreamController<String>.broadcast();
 
+  @override
   Stream<String> get scanResultStream => _scanResultStreamController.stream;
 
   @override
@@ -55,11 +58,13 @@ class ExampleBarcodeScannerServiceImpl implements ExampleBarcodeScannerService {
 
   @override
   Future<StartScanResult> startScan() {
+    // вызываем метод платформы для запуска сканера
     return _scanHostApi.startScan();
   }
 
   @override
   Future<void> stopScan() {
+    // вызываем метод платформы для остановки сканера
     return _scanHostApi.stopScan();
   }
 }

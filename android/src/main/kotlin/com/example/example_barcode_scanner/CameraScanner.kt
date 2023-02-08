@@ -19,16 +19,13 @@ private const val CAMERA_PERMISSION_REQUEST_CODE = 1001
 class CameraScanner(private val textureRegistry: TextureRegistry) : Scanner {
 
 
+    // Экзекьютор анализатора изображений
     private val analysisExecutor = Executors.newSingleThreadExecutor()
     private var camera: Camera? = null
     private var processCameraProvider: ProcessCameraProvider? = null
     private var activity: Activity? = null
 
     private var textureEntry: SurfaceTextureEntry? = null
-
-    override fun getDeviceType(): Pigeon.ScannerType {
-        return Pigeon.ScannerType.CAMERA
-    }
 
     private fun requestCameraPermission(activity: Activity) {
         ActivityCompat.requestPermissions(
@@ -69,11 +66,9 @@ class CameraScanner(private val textureRegistry: TextureRegistry) : Scanner {
 
         this.textureEntry = textureEntry
 
-        val surfaceTexture = textureEntry.surfaceTexture()
         val mainThreadExecutor = ContextCompat.getMainExecutor(activity.baseContext)
+
         val cameraProviderFuture = ProcessCameraProvider.getInstance(activity)
-
-
         cameraProviderFuture.addListener(
             {
                 val cameraProvider: ProcessCameraProvider = cameraProviderFuture.get()
@@ -97,7 +92,14 @@ class CameraScanner(private val textureRegistry: TextureRegistry) : Scanner {
                     )
                     preview.setSurfaceProvider { request ->
                         val reqRes = request.resolution
+
+                        // связываем текстуру и превью
+                        val surfaceTexture = textureEntry.surfaceTexture()
                         surfaceTexture.setDefaultBufferSize(reqRes.width, reqRes.height)
+                        request.provideSurface(Surface(surfaceTexture), mainThreadExecutor) {
+                        }
+
+                        // формируем результат
                         val cameraProperties = Pigeon.CameraProperties.Builder()
                             .setAspectRatio(reqRes.height.toDouble() / reqRes.width.toDouble())
                             .setHeight(reqRes.height.toLong()).setWidth(reqRes.width.toLong())
@@ -106,14 +108,13 @@ class CameraScanner(private val textureRegistry: TextureRegistry) : Scanner {
                             .setScannerType(Pigeon.ScannerType.CAMERA)
                             .setCameraProperties(cameraProperties).build()
 
+                        // отправляем результат через вызов onComplete
                         onComplete(startScanResult)
-                        request.provideSurface(Surface(surfaceTexture), mainThreadExecutor) {
-                        }
                     }
 
 
                 } catch (e: Exception) {
-                    Log.e("PreviewUseCase", "Binding failed! :(", e)
+                    Log.e("ExampleBarcodeScanner", "Binding failed! :(", e)
                     //TODO Handler error
                 }
             },
@@ -122,7 +123,7 @@ class CameraScanner(private val textureRegistry: TextureRegistry) : Scanner {
 
     }
 
-    override fun stopScan(activity: Activity?) {
+    override fun stopScan() {
         release()
     }
 
