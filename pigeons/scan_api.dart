@@ -1,6 +1,13 @@
 import 'package:pigeon/pigeon.dart';
 
-enum ScannerType { tsd, camera }
+/// тип реализации сканера
+enum ScannerType {
+  /// ТСД
+  tsd,
+
+  /// камера
+  camera
+}
 
 /// модель свойств камеры
 class CameraProperties {

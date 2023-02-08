@@ -32,8 +32,11 @@ public class Pigeon {
     return errorList;
   }
 
+  /** тип реализации сканера */
   public enum ScannerType {
+    /** ТСД */
     TSD(0),
+    /** камера */
     CAMERA(1);
 
     private final int index;
