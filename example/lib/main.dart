@@ -29,16 +29,45 @@ class MainScreen extends StatelessWidget {
       appBar: AppBar(
         title: const Text('Plugin example app'),
       ),
-      body: ExampleBarcodeScannerWidget(
-        key: const ValueKey('barcodeScanner'),
-        onScan: (data) async {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Прочтен штрихкод $data'),
-            ),
-          );
-        },
-      ),
+      body: const Body(),
+    );
+  }
+}
+
+class Body extends StatefulWidget {
+  const Body({
+    Key? key,
+  }) : super(key: key);
+
+  @override
+  State<Body> createState() => _BodyState();
+}
+
+class _BodyState extends State<Body> {
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      children: [
+        ExampleBarcodeScannerWidget(
+          key: const ValueKey('barcodeScanner'),
+          onScan: (data) async {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Прочтен штрихкод $data'),
+              ),
+            );
+          },
+        ),
+        Align(
+          alignment: Alignment.bottomCenter,
+          child: ElevatedButton(
+            onPressed: () {
+              setState(() {});
+            },
+            child: Text('ребилд'),
+          ),
+        )
+      ],
     );
   }
 }
