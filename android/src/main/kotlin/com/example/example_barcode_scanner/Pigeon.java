@@ -43,8 +43,13 @@ public class Pigeon {
     }
   }
 
-  /** Generated class from Pigeon that represents data sent in messages. */
+  /**
+   * модель свойств камеры
+   *
+   * Generated class from Pigeon that represents data sent in messages.
+   */
   public static final class CameraProperties {
+    /** id текстуры для передачи изображения */
     private @NonNull Long textureId;
 
     public @NonNull Long getTextureId() {
@@ -58,6 +63,7 @@ public class Pigeon {
       this.textureId = setterArg;
     }
 
+    /** соотношение сторон */
     private @NonNull Double aspectRatio;
 
     public @NonNull Double getAspectRatio() {
@@ -164,8 +170,13 @@ public class Pigeon {
     }
   }
 
-  /** Generated class from Pigeon that represents data sent in messages. */
+  /**
+   * модель результата запуска сканера
+   *
+   * Generated class from Pigeon that represents data sent in messages.
+   */
   public static final class StartScanResult {
+    /** тип сканера */
     private @NonNull ScannerType scannerType;
 
     public @NonNull ScannerType getScannerType() {
@@ -179,6 +190,10 @@ public class Pigeon {
       this.scannerType = setterArg;
     }
 
+    /**
+     * свойства камеры
+     * согласно контракту, если тип сканера [ScannerType.tsd], то данное поле буде null.
+     */
     private @Nullable CameraProperties cameraProperties;
 
     public @Nullable CameraProperties getCameraProperties() {
@@ -271,11 +286,15 @@ public class Pigeon {
     }
   }
 
-  /** Generated interface from Pigeon that represents a handler of messages from Flutter. */
+  /**
+   * описание апи генерируемого pigeon для платформы
+   *
+   * Generated interface from Pigeon that represents a handler of messages from Flutter.
+   */
   public interface ScanHostApi {
-
+    /** запуск сканера */
     void startScan(Result<StartScanResult> result);
-
+    /** остановка сканера */
     void stopScan(Result<Void> result);
 
     /** The codec used by ScanHostApi. */
@@ -350,7 +369,11 @@ public class Pigeon {
       }
     }
   }
-  /** Generated class from Pigeon that represents Flutter messages that can be called from Java. */
+  /**
+   * описание апи геренрируемого pigeon для Flutter приложения
+   *
+   * Generated class from Pigeon that represents Flutter messages that can be called from Java.
+   */
   public static final class ScanFlutterApi {
     private final BinaryMessenger binaryMessenger;
 
@@ -365,6 +388,7 @@ public class Pigeon {
     static MessageCodec<Object> getCodec() {
       return new StandardMessageCodec();
     }
+    /** метод вызываемый платформой для передачи результата сканирования */
     public void onScan(@NonNull String dataArg, Reply<Void> callback) {
       BasicMessageChannel<Object> channel =
           new BasicMessageChannel<>(

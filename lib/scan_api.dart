@@ -13,6 +13,7 @@ enum ScannerType {
   camera,
 }
 
+/// модель свойств камеры
 class CameraProperties {
   CameraProperties({
     required this.textureId,
@@ -21,8 +22,10 @@ class CameraProperties {
     required this.height,
   });
 
+  /// id текстуры для передачи изображения
   int textureId;
 
+  /// соотношение сторон
   double aspectRatio;
 
   int width;
@@ -49,14 +52,18 @@ class CameraProperties {
   }
 }
 
+/// модель результата запуска сканера
 class StartScanResult {
   StartScanResult({
     required this.scannerType,
     this.cameraProperties,
   });
 
+  /// тип сканера
   ScannerType scannerType;
 
+  /// свойства камеры
+  /// согласно контракту, если тип сканера [ScannerType.tsd], то данное поле буде null.
   CameraProperties? cameraProperties;
 
   Object encode() {
@@ -105,6 +112,7 @@ class _ScanHostApiCodec extends StandardMessageCodec {
   }
 }
 
+/// описание апи генерируемого pigeon для платформы
 class ScanHostApi {
   /// Constructor for [ScanHostApi].  The [binaryMessenger] named argument is
   /// available for dependency injection.  If it is left null, the default
@@ -115,6 +123,7 @@ class ScanHostApi {
 
   static const MessageCodec<Object?> codec = _ScanHostApiCodec();
 
+  /// запуск сканера
   Future<StartScanResult> startScan() async {
     final BasicMessageChannel<Object?> channel = BasicMessageChannel<Object?>(
         'dev.flutter.pigeon.ScanHostApi.startScan', codec,
@@ -142,6 +151,7 @@ class ScanHostApi {
     }
   }
 
+  /// остановка сканера
   Future<void> stopScan() async {
     final BasicMessageChannel<Object?> channel = BasicMessageChannel<Object?>(
         'dev.flutter.pigeon.ScanHostApi.stopScan', codec,
@@ -165,9 +175,11 @@ class ScanHostApi {
   }
 }
 
+/// описание апи геренрируемого pigeon для Flutter приложения
 abstract class ScanFlutterApi {
   static const MessageCodec<Object?> codec = StandardMessageCodec();
 
+  /// метод вызываемый платформой для передачи результата сканирования
   void onScan(String data);
 
   static void setup(ScanFlutterApi? api, {BinaryMessenger? binaryMessenger}) {
