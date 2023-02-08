@@ -4,14 +4,15 @@ import android.app.Activity
 
 interface Scanner {
 
-    fun getDeviceType(): DeviceType
+    fun getDeviceType(): Pigeon.ScannerType
 
     fun onActivityAttach(activity: Activity)
 
     fun onActivityDetach(activity: Activity)
 
     fun startScan(
-        activity: Activity, onData: (String) -> Unit, onError: (String?) -> Unit
+        onData: (String) -> Unit,
+        onComplete: (Pigeon.StartScanResult) -> Unit,
     )
 
     fun stopScan(activity: Activity?)

@@ -20,28 +20,26 @@ private const val GET_DEVICE_TYPE = "getDeviceType"
 private const val STOP_SCAN = "stopScan"
 
 /** ExampleBarcodeScannerPlugin */
-class ExampleBarcodeScannerPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
+class ExampleBarcodeScannerPlugin : FlutterPlugin, ActivityAware, Pigeon.ScanHostApi {
     /// The MethodChannel that will the communication between Flutter and native Android
     ///
     /// This local reference serves to register the plugin with the Flutter Engine and unregister it
     /// when the Flutter Engine is detached from the Activity
-    private lateinit var channel: MethodChannel
     private var activity: Activity? = null
 
     // Hardware scan
     private var scanner: Scanner? = null
-    private var textureRegistry: TextureRegistry? = null;
+    private var textureRegistry: TextureRegistry? = null
+    private var flutterApi: Pigeon.ScanFlutterApi? = null
 
 
     override fun onAttachedToEngine(@NonNull flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
-        channel = MethodChannel(flutterPluginBinding.binaryMessenger, "example_barcode_scanner")
-        channel.setMethodCallHandler(this)
-
         textureRegistry = flutterPluginBinding.textureRegistry
+        Pigeon.ScanHostApi.setup(flutterPluginBinding.binaryMessenger, this)
+        flutterApi = Pigeon.ScanFlutterApi(flutterPluginBinding.binaryMessenger)
     }
 
     override fun onDetachedFromEngine(@NonNull flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
-        channel.setMethodCallHandler(null)
         textureRegistry = null
     }
 
@@ -76,44 +74,29 @@ class ExampleBarcodeScannerPlugin : FlutterPlugin, MethodCallHandler, ActivityAw
         activity = null
     }
 
-    override fun onMethodCall(@NonNull call: MethodCall, @NonNull result: Result) {
-        Log.i("ExampleBarcodeScannerPlugin", "onMethodCall")
-
+    override fun startScan(result: Pigeon.Result<Pigeon.StartScanResult>?) {
         val scanner = this.scanner
-        when (call.method) {
-            START_SCAN -> {
-                activity?.let {
-                    scanner?.startScan(
-                        it,
-                        onData = { data ->
-                            ContextCompat.getMainExecutor(activity).execute {
-                                android.util.Log.i("SCANNED", data)
-                                channel.invokeMethod("onScan", data)
-                            }
-                        },
-                        onError = { error ->
-                            ContextCompat.getMainExecutor(activity).execute {
-                                android.util.Log.i("SCAN ERROR", error.toString())
-                                channel.invokeMethod("onError", error)
-                            }
-                        }
-                    )
-                }
-                if(scanner is CameraScanner){
-                    result.success(scanner.textureId)
-                } else {
-                    result.success(null)
-                }
-            }
-            STOP_SCAN -> {
-                scanner?.stopScan(activity);
-                result.success(null)
-            }
-            GET_DEVICE_TYPE -> {
-                result.success(scanner?.getDeviceType()?.name?.lowercase())
-            }
-            else -> result.notImplemented()
+        if(scanner == null){
+            result?.error(Exception("Scanner not running"))
+            return
         }
+
+        scanner.startScan(
+            onData = { data ->
+                ContextCompat.getMainExecutor(activity).execute {
+                    android.util.Log.i("SCANNED", data)
+                    flutterApi?.onScan(data) {}
+                }
+            },
+            onComplete = {
+                result?.success(it)
+            }
+        )
+    }
+
+    override fun stopScan(result: Pigeon.Result<Void>?) {
+        scanner?.stopScan(activity)
+        result?.success(null)
     }
 
 

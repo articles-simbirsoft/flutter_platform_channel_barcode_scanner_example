@@ -13,12 +13,10 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 typealias SuccessListener = (String) -> Unit
-typealias ErrorListener = (String?) -> Unit
 
 
 class MlKitCodeAnalyzer(
     private val barcodeListener: SuccessListener,
-    private val errorListener: ErrorListener
 ) : ImageAnalysis.Analyzer {
     private val scanner = BarcodeScanning.getClient(
           defaultOptions()
@@ -46,9 +44,7 @@ class MlKitCodeAnalyzer(
                         )
                     }
                 }
-                .addOnFailureListener {
-                    errorListener(it.message)
-                }.addOnCompleteListener {
+                .addOnCompleteListener {
                     // Позволяет производить сканирование раз в секунду
                     CoroutineScope(Dispatchers.IO).launch {
                         delay(1000 - (System.currentTimeMillis() - currentTimestamp))

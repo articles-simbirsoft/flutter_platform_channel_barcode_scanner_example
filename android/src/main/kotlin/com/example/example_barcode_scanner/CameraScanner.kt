@@ -22,12 +22,12 @@ class CameraScanner(private val textureRegistry: TextureRegistry) : Scanner {
     private val analysisExecutor = Executors.newSingleThreadExecutor()
     private var camera: Camera? = null
     private var processCameraProvider: ProcessCameraProvider? = null
+    private var activity: Activity? = null
 
     private var textureEntry: SurfaceTextureEntry? = null
-    val textureId: Long? get() = textureEntry?.id()
 
-    override fun getDeviceType(): DeviceType {
-        return DeviceType.CAMERA
+    override fun getDeviceType(): Pigeon.ScannerType {
+        return Pigeon.ScannerType.CAMERA
     }
 
     private fun requestCameraPermission(activity: Activity) {
@@ -46,17 +46,20 @@ class CameraScanner(private val textureRegistry: TextureRegistry) : Scanner {
     }
 
     override fun onActivityAttach(activity: Activity) {
+        this.activity = activity
     }
 
     override fun onActivityDetach(activity: Activity) {
+        this.activity = null
         release()
     }
 
     override fun startScan(
-        activity: Activity,
         onData: (String) -> Unit,
-        onError: (String?) -> Unit
+        onComplete: (Pigeon.StartScanResult) -> Unit,
     ) {
+        val activity = this.activity ?: return
+
         if (!checkCameraPermission(activity)) {
             requestCameraPermission(activity)
         }
@@ -77,17 +80,11 @@ class CameraScanner(private val textureRegistry: TextureRegistry) : Scanner {
                 processCameraProvider = cameraProvider
                 val preview = Preview.Builder()
                     .build()
-                preview.setSurfaceProvider { request ->
-                    val reqRes = request.resolution
-                    surfaceTexture.setDefaultBufferSize(reqRes.width, reqRes.height)
-                    request.provideSurface(Surface(surfaceTexture), mainThreadExecutor) {}
-                }
                 val imageAnalysis = ImageAnalysis.Builder()
                     .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
                     .build()
                 val analyzer: ImageAnalysis.Analyzer = MlKitCodeAnalyzer(
                     barcodeListener = onData,
-                    errorListener = onError,
                 )
                 imageAnalysis.setAnalyzer(analysisExecutor, analyzer)
                 try {
@@ -98,6 +95,23 @@ class CameraScanner(private val textureRegistry: TextureRegistry) : Scanner {
                         preview,
                         imageAnalysis
                     )
+                    preview.setSurfaceProvider { request ->
+                        val reqRes = request.resolution
+                        surfaceTexture.setDefaultBufferSize(reqRes.width, reqRes.height)
+                        val cameraProperties = Pigeon.CameraProperties.Builder()
+                            .setAspectRatio(reqRes.height.toDouble() / reqRes.width.toDouble())
+                            .setHeight(reqRes.height.toLong()).setWidth(reqRes.width.toLong())
+                            .setTextureId(textureEntry.id()).build()
+                        val startScanResult = Pigeon.StartScanResult.Builder()
+                            .setScannerType(Pigeon.ScannerType.CAMERA)
+                            .setCameraProperties(cameraProperties).build()
+
+                        onComplete(startScanResult)
+                        request.provideSurface(Surface(surfaceTexture), mainThreadExecutor) {
+                        }
+                    }
+
+
                 } catch (e: Exception) {
                     Log.e("PreviewUseCase", "Binding failed! :(", e)
                     //TODO Handler error

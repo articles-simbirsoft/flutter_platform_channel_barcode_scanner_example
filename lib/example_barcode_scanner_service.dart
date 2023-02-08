@@ -2,15 +2,26 @@ library barcode_scanner;
 
 import 'dart:async';
 
-import 'package:flutter/services.dart';
+import 'package:example_barcode_scanner/scan_api.dart';
 
 enum DeviceType {
   camera,
   tsd,
 }
 
-abstract class ExampleBarcodeScannerService {
-  Future<DeviceType> getDeviceType();
+abstract class ExampleBarcodeScannerService extends ScanFlutterApi {
+  static ExampleBarcodeScannerService? _instance;
+
+  static ExampleBarcodeScannerService get instance {
+    if (_instance != null) {
+      return _instance!;
+    }
+    _instance = ExampleBarcodeScannerServiceImpl();
+    return _instance!;
+  }
+
+  /// поток результатов сканирования
+  Stream<String> get scanResultStream;
 
   /// метод запуска сервиса сканирования
   /// в [onScan] передается результат успешного сканирования
@@ -19,80 +30,36 @@ abstract class ExampleBarcodeScannerService {
   /// запущен - обновляются назначенные колбеки
   ///
   /// возвращает id текстуры в gl буффере
-  Future<int?> startScan({
-    required final Future<void> Function(String data) onScan,
-    required final Future<void> Function(String? errorMessage) onError,
-  });
+  Future<StartScanResult> startScan();
 
   /// метод остановки сервиса сканирования
-  Future<int?> stopScan();
-
-  void setCallback(
-    Function(String barcode) onScanned,
-    Function(String? error) onError,
-  );
+  Future<void> stopScan();
 }
 
 class ExampleBarcodeScannerServiceImpl implements ExampleBarcodeScannerService {
-  static const MethodChannel _methodChannel =
-      MethodChannel('example_barcode_scanner');
+  ExampleBarcodeScannerServiceImpl() {
+    ScanFlutterApi.setup(this);
+  }
+
+  final ScanHostApi _scanHostApi = ScanHostApi();
+
+  final StreamController<String> _scanResultStreamController =
+      StreamController<String>.broadcast();
+
+  Stream<String> get scanResultStream => _scanResultStreamController.stream;
 
   @override
-  Future<int?> startScan({
-    required Future<void> Function(String data) onScan,
-    required Future<void> Function(String? errorMessage) onError,
-  }) async {
-    final textureId = await _methodChannel.invokeMethod<int>('startScan');
-
-    setCallback(onScan, onError);
-
-    return textureId;
+  void onScan(String data) {
+    _scanResultStreamController.add(data);
   }
 
   @override
-  Future<int?> stopScan() {
-    return _methodChannel.invokeMethod<int>('stopScan');
+  Future<StartScanResult> startScan() {
+    return _scanHostApi.startScan();
   }
 
   @override
-  Future<DeviceType> getDeviceType() async {
-    final deviceTypeString = await _methodChannel.invokeMethod<String>(
-      'getDeviceType',
-    );
-    return _getDeviceTypeFromString(deviceTypeString);
-  }
-
-  DeviceType _getDeviceTypeFromString(String? string) {
-    switch (string) {
-      case 'tsd':
-        return DeviceType.tsd;
-      case 'camera':
-        return DeviceType.camera;
-    }
-
-    throw Exception("Неизвестный тип устройства!");
-  }
-
-  @override
-  void setCallback(
-    Function(String barcode) onScanned,
-    Function(String? error) onError,
-  ) {
-    _methodChannel.setMethodCallHandler((final MethodCall call) async {
-      if (call.method == 'onScan') {
-        if (call.arguments != null) {
-          onScanned(call.arguments as String);
-        } else {
-          onError('barcode is null');
-        }
-      }
-      if (call.method == 'onError') {
-        if (call.arguments != null) {
-          onError(call.arguments as String);
-        } else {
-          onError(null);
-        }
-      }
-    });
+  Future<void> stopScan() {
+    return _scanHostApi.stopScan();
   }
 }

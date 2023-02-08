@@ -29,24 +29,15 @@ class MainScreen extends StatelessWidget {
       appBar: AppBar(
         title: const Text('Plugin example app'),
       ),
-      body: Center(
-        child: ExampleBarcodeScannerWidget(
-          key: const ValueKey('barcodeScanner'),
-          onScan: (data) async {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('Прочтен штрихкод $data'),
-              ),
-            );
-          },
-          onError: (error) async {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('Произошла ошибка $error'),
-              ),
-            );
-          },
-        ),
+      body: ExampleBarcodeScannerWidget(
+        key: const ValueKey('barcodeScanner'),
+        onScan: (data) async {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Прочтен штрихкод $data'),
+            ),
+          );
+        },
       ),
     );
   }

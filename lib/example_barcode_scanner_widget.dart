@@ -1,16 +1,16 @@
+import 'dart:async';
+
 import 'package:example_barcode_scanner/example_barcode_scanner_service.dart';
+import 'package:example_barcode_scanner/scan_api.dart';
 import 'package:flutter/material.dart';
 
 class ExampleBarcodeScannerWidget extends StatefulWidget {
   const ExampleBarcodeScannerWidget({
     Key? key,
     required this.onScan,
-    required this.onError,
   }) : super(key: key);
 
   final Future<void> Function(String data) onScan;
-
-  final Future<void> Function(String? errorMessage) onError;
 
   @override
   State<ExampleBarcodeScannerWidget> createState() =>
@@ -19,69 +19,76 @@ class ExampleBarcodeScannerWidget extends StatefulWidget {
 
 class _ExampleBarcodeScannerWidgetState
     extends State<ExampleBarcodeScannerWidget> {
-  final _barcodeScannerService = ExampleBarcodeScannerServiceImpl();
-  int? _textureId;
-  DeviceType? _deviceType;
+  final _barcodeScannerService = ExampleBarcodeScannerService.instance;
+  StreamSubscription<String>? _onScanSubscription;
+  StartScanResult? _startScanResult;
 
   @override
   void initState() {
     super.initState();
-    _startScan().then((textureId) {
+    _startScan().then((startScanResult) {
       setState(() {
-        _textureId = textureId;
+        _startScanResult = startScanResult;
       });
     });
-    _barcodeScannerService.getDeviceType().then(
-      (deviceType) {
-        setState(() {
-          _deviceType = deviceType;
-        });
-      },
-    );
   }
 
-  Future<int?> _startScan() {
-    return _barcodeScannerService.startScan(
-      onScan: widget.onScan,
-      onError: widget.onError,
+  Future<StartScanResult> _startScan() {
+    _onScanSubscription = _barcodeScannerService.scanResultStream.listen(
+      widget.onScan,
     );
+
+    return _barcodeScannerService.startScan();
+  }
+
+  Future<void> _stopScan() {
+    _onScanSubscription?.cancel();
+
+    return _barcodeScannerService.stopScan();
   }
 
   @override
   void didUpdateWidget(covariant ExampleBarcodeScannerWidget oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.onScan != widget.onScan ||
-        oldWidget.onError != widget.onError) {
-      _barcodeScannerService.setCallback(widget.onScan, widget.onError);
+    if (oldWidget.onScan != widget.onScan) {
+      _onScanSubscription?.cancel();
+      _onScanSubscription = _barcodeScannerService.scanResultStream.listen(
+        widget.onScan,
+      );
     }
   }
 
   @override
   void dispose() {
-    _barcodeScannerService.stopScan();
+    _stopScan();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final textureId = _textureId;
-    final deviceType = _deviceType;
-    if (textureId == null || deviceType == null) {
+    final startScanResult = _startScanResult;
+
+    if (startScanResult == null) {
       return const Center(
         child: CircularProgressIndicator(),
       );
     }
 
-    if (deviceType == DeviceType.tsd) {
+    if (startScanResult.scannerType == DeviceType.tsd) {
       return const Center(
         child: Text('tsd'),
       );
     }
 
+    final cameraProperties = startScanResult.cameraProperties!;
     return AspectRatio(
-      aspectRatio: 3 / 4,
-      child: Texture(
-        textureId: textureId,
+      aspectRatio: cameraProperties.aspectRatio,
+      child: SizedBox(
+        height: cameraProperties.height.toDouble(),
+        width: cameraProperties.width.toDouble(),
+        child: Texture(
+          textureId: cameraProperties.textureId,
+        ),
       ),
     );
   }
