@@ -46,28 +46,17 @@ class Body extends StatefulWidget {
 class _BodyState extends State<Body> {
   @override
   Widget build(BuildContext context) {
-    return Stack(
-      children: [
-        ExampleBarcodeScannerWidget(
-          key: const ValueKey('barcodeScanner'),
-          onScan: (data) async {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('Прочтен штрихкод $data'),
-              ),
-            );
-          },
-        ),
-        Align(
-          alignment: Alignment.bottomCenter,
-          child: ElevatedButton(
-            onPressed: () {
-              setState(() {});
-            },
-            child: Text('ребилд'),
-          ),
-        )
-      ],
+    return Center(
+      child:         ExampleBarcodeScannerWidget(
+        key: const ValueKey('barcodeScanner'),
+        onScan: (data) async {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Прочтен штрихкод $data'),
+            ),
+          );
+        },
+      ),
     );
   }
 }

@@ -27,18 +27,21 @@ class ExampleBarcodeScannerPlugin : FlutterPlugin, ActivityAware, Pigeon.ScanHos
     private var flutterApi: Pigeon.ScanFlutterApi? = null
 
 
-    override fun onAttachedToEngine(@NonNull flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
-        textureRegistry = flutterPluginBinding.textureRegistry
+    override fun onAttachedToEngine(
+        @NonNull flutterPluginBinding: FlutterPlugin.FlutterPluginBinding
+    ) {
         // важно вызвать чтобы зарегистрировать экземпляр
-        // плагина для получения сообщений по PlatformChannel 
+        // плагина для получения сообщений по PlatformChannel
         Pigeon.ScanHostApi.setup(flutterPluginBinding.binaryMessenger, this)
+        textureRegistry = flutterPluginBinding.textureRegistry
         flutterApi = Pigeon.ScanFlutterApi(flutterPluginBinding.binaryMessenger)
     }
 
-    override fun onDetachedFromEngine(@NonNull flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
+    override fun onDetachedFromEngine(
+        @NonNull flutterPluginBinding: FlutterPlugin.FlutterPluginBinding
+    ) {
         textureRegistry = null
     }
-
 
     override fun onAttachedToActivity(activityBinding: ActivityPluginBinding) {
         activity = activityBinding.activity
@@ -59,7 +62,9 @@ class ExampleBarcodeScannerPlugin : FlutterPlugin, ActivityAware, Pigeon.ScanHos
         TODO("Not yet implemented")
     }
 
-    override fun onReattachedToActivityForConfigChanges(activityBindingScanner: ActivityPluginBinding) {
+    override fun onReattachedToActivityForConfigChanges(
+        activityBindingScanner: ActivityPluginBinding
+    ) {
         TODO("Not yet implemented")
     }
 
@@ -75,11 +80,11 @@ class ExampleBarcodeScannerPlugin : FlutterPlugin, ActivityAware, Pigeon.ScanHos
             result?.error(Exception("Scanner not running"))
             return
         }
-        
+
         scanner.startScan(
             onData = { data ->
                 ContextCompat.getMainExecutor(activity).execute {
-                    android.util.Log.i("ExampleBarcodeScanner","data: $data")
+                    android.util.Log.i("ExampleBarcodeScanner", "data: $data")
                     flutterApi?.onScan(data) {}
                 }
             },
