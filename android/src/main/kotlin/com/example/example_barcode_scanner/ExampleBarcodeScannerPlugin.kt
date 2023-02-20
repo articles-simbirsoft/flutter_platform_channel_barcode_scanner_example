@@ -4,16 +4,11 @@ import android.app.Activity
 import android.os.Build
 import androidx.annotation.NonNull
 import androidx.core.content.ContextCompat
-import io.flutter.Log
-
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.embedding.engine.plugins.activity.ActivityAware
 import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding
-import io.flutter.plugin.common.MethodCall
-import io.flutter.plugin.common.MethodChannel
-import io.flutter.plugin.common.MethodChannel.MethodCallHandler
-import io.flutter.plugin.common.MethodChannel.Result
 import io.flutter.view.TextureRegistry
+import android.util.Log
 
 
 /** Класс плагина сканера
@@ -46,15 +41,19 @@ class ExampleBarcodeScannerPlugin : FlutterPlugin, ActivityAware, Pigeon.ScanHos
     override fun onAttachedToActivity(activityBinding: ActivityPluginBinding) {
         activity = activityBinding.activity
         val deviceInfo = "${Build.MANUFACTURER} ${Build.MODEL} ${Build.DEVICE}"
-        android.util.Log.i("ExampleBarcodeScanner", deviceInfo)
+        Log.i("ExampleBarcodeScanner", deviceInfo)
         scanner = when {
             // TODO здесь можно добавить создание объекта реализации [Scanner] под конкретный ТСД
-            else -> CameraScanner(textureRegistry!!)
+            else -> textureRegistry?.let { textureRegistry ->
+                return@let CameraScanner(textureRegistry)
+            }
         }
         try {
-            scanner?.onActivityAttach(activity!!)
+            activity?.let { activity ->
+                scanner?.onActivityAttach(activity)
+            }
         } catch (e: Throwable) {
-            android.util.Log.e("ExampleBarcodeScanner", deviceInfo, e)
+            Log.e("ExampleBarcodeScanner", deviceInfo, e)
         }
     }
 
@@ -81,17 +80,14 @@ class ExampleBarcodeScannerPlugin : FlutterPlugin, ActivityAware, Pigeon.ScanHos
             return
         }
 
-        scanner.startScan(
-            onData = { data ->
-                ContextCompat.getMainExecutor(activity).execute {
-                    android.util.Log.i("ExampleBarcodeScanner", "data: $data")
-                    flutterApi?.onScan(data) {}
-                }
-            },
-            onComplete = {
-                result?.success(it)
+        scanner.startScan(onData = { data ->
+            ContextCompat.getMainExecutor(activity).execute {
+                Log.i("ExampleBarcodeScanner", "data: $data")
+                flutterApi?.onScan(data) {}
             }
-        )
+        }, onComplete = {
+            result?.success(it)
+        })
     }
 
     override fun stopScan(result: Pigeon.Result<Void>?) {

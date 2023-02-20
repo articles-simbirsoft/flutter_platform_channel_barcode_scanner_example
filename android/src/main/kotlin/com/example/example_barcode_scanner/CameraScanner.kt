@@ -18,7 +18,6 @@ private const val CAMERA_PERMISSION_REQUEST_CODE = 1001
 
 class CameraScanner(private val textureRegistry: TextureRegistry) : Scanner {
 
-
     // Экзекьютор анализатора изображений
     private val analysisExecutor = Executors.newSingleThreadExecutor()
     private var camera: Camera? = null
@@ -29,16 +28,13 @@ class CameraScanner(private val textureRegistry: TextureRegistry) : Scanner {
 
     private fun requestCameraPermission(activity: Activity) {
         ActivityCompat.requestPermissions(
-            activity,
-            arrayOf(Manifest.permission.CAMERA),
-            CAMERA_PERMISSION_REQUEST_CODE
+            activity, arrayOf(Manifest.permission.CAMERA), CAMERA_PERMISSION_REQUEST_CODE
         )
     }
 
     private fun checkCameraPermission(activity: Activity): Boolean {
         return ContextCompat.checkSelfPermission(
-            activity,
-            Manifest.permission.CAMERA
+            activity, Manifest.permission.CAMERA
         ) == PackageManager.PERMISSION_GRANTED
     }
 
@@ -73,11 +69,9 @@ class CameraScanner(private val textureRegistry: TextureRegistry) : Scanner {
             {
                 val cameraProvider: ProcessCameraProvider = cameraProviderFuture.get()
                 processCameraProvider = cameraProvider
-                val preview = Preview.Builder()
-                    .build()
+                val preview = Preview.Builder().build()
                 val imageAnalysis = ImageAnalysis.Builder()
-                    .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
-                    .build()
+                    .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST).build()
                 val analyzer: ImageAnalysis.Analyzer = MlKitCodeAnalyzer(
                     barcodeListener = onData,
                 )
@@ -96,8 +90,7 @@ class CameraScanner(private val textureRegistry: TextureRegistry) : Scanner {
                         // связываем текстуру и превью
                         val surfaceTexture = textureEntry.surfaceTexture()
                         surfaceTexture.setDefaultBufferSize(reqRes.width, reqRes.height)
-                        request.provideSurface(Surface(surfaceTexture), mainThreadExecutor) {
-                        }
+                        request.provideSurface(Surface(surfaceTexture), mainThreadExecutor) {}
 
                         // формируем результат
                         val cameraProperties = Pigeon.CameraProperties.Builder()

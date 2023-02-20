@@ -20,39 +20,31 @@ typealias SuccessListener = (String) -> Unit
 class MlKitCodeAnalyzer(
     private val barcodeListener: SuccessListener,
 ) : ImageAnalysis.Analyzer {
+
     private val scanner = BarcodeScanning.getClient(
         defaultOptions()
     )
 
-
-    private fun defaultOptions() = BarcodeScannerOptions.Builder()
-        .setBarcodeFormats(
-            Barcode.FORMAT_EAN_13,
-            Barcode.FORMAT_EAN_8,
-        )
-        .build()
+    private fun defaultOptions() = BarcodeScannerOptions.Builder().setBarcodeFormats(
+        Barcode.FORMAT_EAN_13,
+        Barcode.FORMAT_EAN_8,
+    ).build()
 
     @SuppressLint("UnsafeExperimentalUsageError")
     override fun analyze(image: ImageProxy) {
-        val mediaImage = image.image
-        if (mediaImage != null) {
-            val mlImage = InputImage.fromMediaImage(mediaImage, image.imageInfo.rotationDegrees)
-            val currentTimestamp = System.currentTimeMillis()
-            scanner.process(mlImage)
-                .addOnSuccessListener { barcodes ->
-                    if (barcodes.isNotEmpty() && barcodes[0].rawValue != null) barcodes[0].rawValue?.let {
-                        barcodeListener(
-                            it
-                        )
-                    }
-                }
-                .addOnCompleteListener {
-                    // Позволяет производить сканирование раз в секунду
-                    CoroutineScope(Dispatchers.IO).launch {
-                        delay(1000 - (System.currentTimeMillis() - currentTimestamp))
-                        image.close()
-                    }
-                }
+        val mediaImage = image.image ?: return
+        val mlImage = InputImage.fromMediaImage(mediaImage, image.imageInfo.rotationDegrees)
+        val currentTimestamp = System.currentTimeMillis()
+        scanner.process(mlImage).addOnSuccessListener { barcodes ->
+            barcodes.firstOrNull()?.let {
+                it.rawValue?.let(barcodeListener)
+            }
+        }.addOnCompleteListener {
+            // Позволяет производить сканирование раз в секунду
+            CoroutineScope(Dispatchers.IO).launch {
+                delay(1000 - (System.currentTimeMillis() - currentTimestamp))
+                image.close()
+            }
         }
     }
 }
