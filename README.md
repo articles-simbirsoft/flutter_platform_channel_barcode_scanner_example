@@ -1,5 +1,7 @@
 # example_barcode_scanner
 
+Пример кода для этой статьи: https://habr.com/ru/companies/simbirsoft/articles/719664/
+
 Пример использования platform channels для реализации сканера 1-d/2-d кодов. 
 
 ## Генерация Pigeon
